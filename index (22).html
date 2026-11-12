@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple MERN Todo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Simple Todo</h1>
+
+    <form id="todo-form">
+      <input type="text" id="todo-input" placeholder="Naya kaam likho..." required />
+      <button type="submit">Add</button>
+    </form>
+
+    <ul id="todo-list"></ul>
+    <p id="count"></p>
+  </div>
+
+  <script>
+    const API = "/api/todos";
+    const list = document.getElementById("todo-list");
+    const form = document.getElementById("todo-form");
+    const input = document.getElementById("todo-input");
+    const count = document.getElementById("count");
+
+    async function loadTodos() {
+      const res = await fetch(API);
+      const todos = await res.json();
+      list.innerHTML = "";
+      todos.forEach((t) => {
+        const li = document.createElement("li");
+        if (t.completed) li.className = "done";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = t.completed;
+        cb.onchange = () => updateTodo(t._id, { completed: cb.checked });
+
+        const span = document.createElement("span");
+        span.textContent = t.title;
+
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.className = "danger";
+        del.onclick = () => deleteTodo(t._id);
+
+        li.append(cb, span, del);
+        list.appendChild(li);
+      });
+      count.textContent = todos.filter((t) => !t.completed).length + " kaam baaki hain";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: input.value }),
+      });
+      input.value = "";
+      loadTodos();
+    });
+
+    async function updateTodo(id, data) {
+      await fetch(`${API}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      loadTodos();
+    }
+
+    async function deleteTodo(id) {
+      await fetch(`${API}/${id}`, { method: "DELETE" });
+      loadTodos();
+    }
+
+    loadTodos();
+  </script>
+</body>
+</html>
